@@ -55,7 +55,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 });
 
 // Serve index.html for all unknown routes (for GitHub Pages/SPA routing fallback)
-app.get('*', (req, res) => {
+app.get('/', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'public', 'index.html'));
 });
 
