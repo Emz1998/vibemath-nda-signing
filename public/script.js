@@ -127,36 +127,35 @@ function uploadToLocalServer(signingData) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  let y = 20;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text('NON-DISCLOSURE AGREEMENT', pageWidth / 2, y, { align: 'center' });
-
   doc.setFont('helvetica');
-  doc.setFontSize(12);
-  y += 10;
+  doc.setFontSize(18);
+  doc.text('NON-DISCLOSURE AGREEMENT', 105, 20, { align: 'center' });
 
-  const centerTextBlock = (label, lines) => {
+  doc.setFontSize(12);
+  let y = 30;
+
+  const addTextBlock = (label, textLines) => {
     doc.setFont(undefined, 'bold');
-    doc.text(label, pageWidth / 2, y, { align: 'center' });
+    doc.text(label, 20, y);
     y += 7;
     doc.setFont(undefined, 'normal');
-    lines.forEach((line) => {
-      doc.text(line, pageWidth / 2, y, { align: 'center' });
-      y += 6;
+    textLines.forEach((line) => {
+      doc.text(line, 20, y);
+      y += 7;
     });
-    y += 5;
+    y += 3;
   };
 
-  centerTextBlock(`This Non-Disclosure Agreement ("Agreement")`, [
-    'is entered into by and between the disclosing party and the receiving party',
-    'to prevent the unauthorized disclosure of Confidential Information as defined below.',
+  addTextBlock('This Non-Disclosure Agreement ("Agreement")', [
+    'is entered into by and between the disclosing party and the receiving party for',
+    'the purpose of preventing the unauthorized disclosure of Confidential Information',
+    'as defined below.',
   ]);
 
-  centerTextBlock('Definition of Confidential Information:', [
-    '"Confidential Information" includes:',
+  addTextBlock('Definition of Confidential Information:', [
+    'For purposes of this Agreement, "Confidential Information" shall include all information',
+    'or material that has or could have commercial value or other utility in the business in',
+    'which the disclosing party is engaged, including but not limited to:',
     '• Business plans, strategies, and concepts',
     '• Product designs, specifications, and development plans',
     '• Marketing strategies and customer information',
@@ -164,19 +163,19 @@ function uploadToLocalServer(signingData) {
     '• Technical data and know-how',
   ]);
 
-  centerTextBlock('Obligations of Receiving Party:', [
+  addTextBlock('Obligations of Receiving Party:', [
     'The receiving party agrees to:',
     '• Hold and maintain the Confidential Information in strict confidence',
-    '• Not disclose it to any third parties',
-    '• Not use it for any purpose other than evaluation',
+    '• Not disclose the Confidential Information to any third parties',
+    '• Not use the Confidential Information for any purpose other than evaluation',
     '• Return or destroy all Confidential Information upon request',
   ]);
 
-  centerTextBlock('Term:', [
-    'This Agreement shall remain in effect for 5 years from the date of signing.',
+  addTextBlock('Term:', [
+    'This Agreement shall remain in effect for a period of 5 years from the date of signing.',
   ]);
 
-  centerTextBlock('Signer Details:', [
+  addTextBlock('Signer Details:', [
     `Name: ${signingData.fullName}`,
     `Email: ${signingData.email}`,
     `Company: ${signingData.company || '(none)'}`,
@@ -184,20 +183,11 @@ function uploadToLocalServer(signingData) {
   ]);
 
   if (signingData.signature) {
-    doc.text('Signature:', pageWidth / 2, y, { align: 'center' });
+    doc.text('Signature:', 20, y);
     try {
-      doc.addImage(
-        signingData.signature,
-        'PNG',
-        (pageWidth - 80) / 2,
-        y + 5,
-        80,
-        30
-      );
+      doc.addImage(signingData.signature, 'PNG', 20, y + 5, 80, 30);
     } catch {
-      doc.text('[Signature could not be rendered]', pageWidth / 2, y + 15, {
-        align: 'center',
-      });
+      doc.text('[Signature not displayable]', 20, y + 15);
     }
   }
 
