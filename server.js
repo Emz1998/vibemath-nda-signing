@@ -1,42 +1,55 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
+const nodemailer = require('nodemailer');
+require('dotenv').config();
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
 app.use(cors());
-app.use(express.static('public')); // serve HTML and frontend files
+app.use(express.json());
+app.use(express.static('public'));
 
-// Ensure the output folder exists
-const outputDir = path.join(__dirname, 'signed-ndas');
-if (!fs.existsSync(outputDir)) {
-  fs.mkdirSync(outputDir);
-}
+// Email credentials (use environment variables in production)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.USER_NAME, // ⬅️ Replace with your email
+    pass: process.env.PASSWORD, // ⬅️ Use app password if 2FA
+  },
+});
 
-// Save PDF to local server
-app.post('/upload', upload.single('file'), (req, res) => {
+// POST endpoint to receive and email the signed NDA PDF
+app.post('/upload', upload.single('file'), async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, email } = req.body;
     const file = req.file;
 
-    if (!name || !file) {
-      return res.status(400).send({ error: 'Missing required fields' });
+    if (!name || !email || !file) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const filename = `${name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
-    const filepath = path.join(outputDir, filename);
+    // Send the email with PDF attachment
+    const mailOptions = {
+      from: '"NDA Bot" <your-email@gmail.com>',
+      to: 'your-email@gmail.com', // ⬅️ Where you want to receive the NDA
+      subject: `New NDA Signed by ${name}`,
+      text: `A new NDA was signed by ${name} (${email}). See attached PDF.`,
+      attachments: [
+        {
+          filename: `${name.replace(/\s+/g, '_')}.pdf`,
+          content: file.buffer,
+        },
+      ],
+    };
 
-    fs.writeFileSync(filepath, file.buffer);
-
-    console.log(`✅ NDA saved at: ${filepath}`);
-    res.status(200).send({ message: 'NDA saved successfully' });
+    await transporter.sendMail(mailOptions);
+    console.log(`📧 NDA emailed for: ${name}`);
+    res.status(200).json({ message: 'Email sent successfully' });
   } catch (err) {
-    console.error(err);
-    res.status(500).send({ error: err.message });
+    console.error('❌ Email failed:', err);
+    res.status(500).json({ error: 'Email failed to send' });
   }
 });
 
