@@ -3,16 +3,25 @@ const DISCOVERY_DOC =
   'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-// You'll need to replace these with your actual Google API credentials
+// ⚠️ IMPORTANT: Replace these with your actual Google API credentials
 // Get them from: https://console.developers.google.com/
-const API_KEY = 'AIzaSyB9LhVDezk7mmH0V1tR1YhVIwf-RxYrg2s';
+const API_KEY = 'AIzaSyB9LhVDezk7mmH0V1tR1YhVIwf-RxYrg2s'; // Replace with your real API key
 const CLIENT_ID =
-  '582559453454-e67dabpgjpkiiufqkitnj2duunsh9p9r.apps.googleusercontent.com';
+  '582559453454-e67dabpgjpkiiufqkitnj2duunsh9p9r.apps.googleusercontent.com'; // Replace with your real Client ID
 
 let gapi;
 let tokenClient;
 let gapiInited = false;
 let gisInited = false;
+
+// Debug flag
+const DEBUG_MODE = true;
+
+function debugLog(message, data = null) {
+  if (DEBUG_MODE) {
+    console.log(`[NDA Debug] ${message}`, data || '');
+  }
+}
 
 // Signature canvas functionality
 const canvas = document.getElementById('signatureCanvas');
@@ -286,36 +295,76 @@ function showDocument() {
 async function initializeAndAutoUpload(signingData) {
   const statusDiv = document.getElementById('autoUploadStatus');
 
+  debugLog('Starting auto-upload process', signingData);
+
+  // Check if credentials are set
+  if (
+    API_KEY === 'YOUR_GOOGLE_API_KEY_HERE' ||
+    CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE'
+  ) {
+    debugLog('API credentials not configured');
+    statusDiv.innerHTML = `
+            <div class="drive-status error">
+                ⚠️ Google Drive API not configured<br>
+                <small>Admin needs to add API credentials to enable auto-upload</small><br>
+                <button onclick="generateSignedNDA({
+                    fullName: '${signingData.fullName}',
+                    email: '${signingData.email}',
+                    company: '${signingData.company}',
+                    timestamp: '${signingData.timestamp}',
+                    signature: '${signingData.signature}'
+                }, false)" class="btn-download" style="margin-top: 10px;">
+                    📥 Download PDF Instead
+                </button>
+            </div>
+        `;
+    return;
+  }
+
   try {
     statusDiv.innerHTML =
       '<div class="drive-status">🔑 Initializing Google Drive API...</div>';
+    debugLog('Loading Google APIs...');
 
     // Load Google APIs if not already loaded
     await loadGoogleAPIs();
+    debugLog('Google APIs loaded successfully');
 
     statusDiv.innerHTML =
       '<div class="drive-status">🔐 Requesting Google Drive permission...</div>';
+    debugLog('Initializing Google APIs...');
 
     // Initialize APIs
     await initializeGoogleAPIs();
+    debugLog('Google APIs initialized successfully');
 
     statusDiv.innerHTML =
       '<div class="drive-status">📄 Generating signed NDA PDF...</div>';
+    debugLog('Generating and uploading PDF...');
 
     // Generate PDF and auto-upload
     await generateAndAutoUpload(signingData);
+    debugLog('Auto-upload completed successfully');
   } catch (error) {
     console.error('Auto-upload failed:', error);
+    debugLog('Auto-upload failed', error);
+
     statusDiv.innerHTML = `
             <div class="drive-status error">
                 ❌ Auto-upload failed: ${error.message}<br>
-                <button onclick="manualUpload('${JSON.stringify(
-                  signingData
-                ).replace(
-                  /'/g,
-                  "\\'"
-                )})" class="btn-drive" style="margin-top: 10px;">
+                <button onclick="retryAutoUpload('${encodeURIComponent(
+                  JSON.stringify(signingData)
+                )}')" class="btn-drive" style="margin-top: 10px;">
                     🔄 Retry Upload
+                </button>
+                <button onclick="generateSignedNDA({
+                    fullName: '${signingData.fullName}',
+                    email: '${signingData.email}',
+                    company: '${signingData.company}',
+                    timestamp: '${signingData.timestamp}',
+                    signature: '${signingData.signature}'
+                }, false)" class="btn-download" style="margin-top: 10px;">
+                    📥 Download PDF Instead
                 </button>
             </div>
         `;
@@ -323,63 +372,110 @@ async function initializeAndAutoUpload(signingData) {
 }
 
 async function loadGoogleAPIs() {
+  debugLog('Loading Google APIs...');
+
   return new Promise((resolve, reject) => {
+    // Check if APIs are already loaded
+    if (typeof gapi !== 'undefined' && typeof google !== 'undefined') {
+      debugLog('Google APIs already loaded');
+      resolve();
+      return;
+    }
+
     // Load GAPI if not loaded
     if (typeof gapi === 'undefined') {
+      debugLog('Loading GAPI script...');
       const gapiScript = document.createElement('script');
       gapiScript.src = 'https://apis.google.com/js/api.js';
       gapiScript.onload = () => {
+        debugLog('GAPI script loaded, loading GIS script...');
         // Load Google Identity Services
+        const gisScript = document.createElement('script');
+        gisScript.src = 'https://accounts.google.com/gsi/client';
+        gisScript.onload = () => {
+          debugLog('GIS script loaded successfully');
+          resolve();
+        };
+        gisScript.onerror = (error) => {
+          debugLog('Failed to load GIS script', error);
+          reject(new Error('Failed to load Google Identity Services'));
+        };
+        document.head.appendChild(gisScript);
+      };
+      gapiScript.onerror = (error) => {
+        debugLog('Failed to load GAPI script', error);
+        reject(new Error('Failed to load Google API script'));
+      };
+      document.head.appendChild(gapiScript);
+    } else {
+      debugLog('GAPI already loaded, loading GIS...');
+      if (typeof google === 'undefined') {
         const gisScript = document.createElement('script');
         gisScript.src = 'https://accounts.google.com/gsi/client';
         gisScript.onload = resolve;
         gisScript.onerror = reject;
         document.head.appendChild(gisScript);
-      };
-      gapiScript.onerror = reject;
-      document.head.appendChild(gapiScript);
-    } else {
-      resolve();
+      } else {
+        resolve();
+      }
     }
   });
 }
 
 async function initializeGoogleAPIs() {
+  debugLog('Initializing Google APIs...');
+
   return new Promise(async (resolve, reject) => {
     try {
       // Initialize GAPI
+      debugLog('Initializing GAPI client...');
       await new Promise((res, rej) => {
-        gapi.load('client', res);
+        gapi.load('client', {
+          callback: res,
+          onerror: rej,
+        });
       });
 
+      debugLog('Initializing GAPI client with credentials...');
       await gapi.client.init({
         apiKey: API_KEY,
         discoveryDocs: [DISCOVERY_DOC],
       });
+
+      debugLog('GAPI client initialized, setting up OAuth...');
 
       // Initialize Google Identity Services
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
         callback: (response) => {
+          debugLog('OAuth callback received', response);
           if (response.error) {
-            reject(new Error(response.error));
+            debugLog('OAuth error', response.error);
+            reject(new Error(`OAuth error: ${response.error}`));
           } else {
+            debugLog('OAuth successful, token received');
+            gapiInited = true;
+            gisInited = true;
             resolve();
           }
         },
       });
 
-      gapiInited = true;
-      gisInited = true;
+      debugLog('OAuth client configured, requesting access token...');
 
       // Request access token immediately
       if (gapi.client.getToken() === null) {
+        debugLog('No existing token, requesting new token...');
         tokenClient.requestAccessToken({ prompt: 'consent' });
       } else {
+        debugLog('Existing token found');
+        gapiInited = true;
+        gisInited = true;
         resolve();
       }
     } catch (error) {
+      debugLog('Error initializing Google APIs', error);
       reject(error);
     }
   });
@@ -643,7 +739,19 @@ function generateSignedNDA(signerData, uploadToDrive = false) {
   return filename;
 }
 
+// Retry function with better error handling
+function retryAutoUpload(encodedSigningData) {
+  try {
+    const signingData = JSON.parse(decodeURIComponent(encodedSigningData));
+    debugLog('Retrying auto-upload', signingData);
+    initializeAndAutoUpload(signingData);
+  } catch (error) {
+    debugLog('Retry failed', error);
+    console.error('Retry upload failed:', error);
+  }
+}
+
 // Make functions globally available
 window.showDocument = showDocument;
 window.generateSignedNDA = generateSignedNDA;
-window.manualUpload = manualUpload;
+window.retryAutoUpload = retryAutoUpload;
