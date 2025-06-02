@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NDA Agreement - VibeMatch App Plan</title>
+
+    <!-- Local Stylesheets -->
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="nda-form" id="ndaForm">
+        <div class="header">
+          <h1>📄 NDA Agreement</h1>
+          <p>
+            Please review and sign the Non-Disclosure Agreement to access the
+            VibeMatch App Plan
+          </p>
+        </div>
+
+        <div class="nda-content">
+          <h2>Non-Disclosure Agreement</h2>
+          <p>
+            <strong>This Non-Disclosure Agreement ("Agreement")</strong> is
+            entered into by and between the disclosing party and the receiving
+            party for the purpose of preventing the unauthorized disclosure of
+            Confidential Information as defined below.
+          </p>
+
+          <p>
+            <strong>Definition of Confidential Information:</strong> For
+            purposes of this Agreement, "Confidential Information" shall include
+            all information or material that has or could have commercial value
+            or other utility in the business in which the disclosing party is
+            engaged, including but not limited to:
+          </p>
+
+          <p>
+            • Business plans, strategies, and concepts<br />
+            • Product designs, specifications, and development plans<br />
+            • Marketing strategies and customer information<br />
+            • Financial information and projections<br />
+            • Technical data and know-how
+          </p>
+
+          <p>
+            <strong>Obligations of Receiving Party:</strong> The receiving party
+            agrees to:
+          </p>
+          <p>
+            • Hold and maintain the Confidential Information in strict
+            confidence<br />
+            • Not disclose the Confidential Information to any third parties<br />
+            • Not use the Confidential Information for any purpose other than
+            evaluation<br />
+            • Return or destroy all Confidential Information upon request
+          </p>
+
+          <p>
+            <strong>Term:</strong> This Agreement shall remain in effect for a
+            period of 5 years from the date of signing.
+          </p>
+        </div>
+
+        <form id="signatureForm">
+          <div class="form-group">
+            <label for="fullName">Full Legal Name *</label>
+            <input type="text" id="fullName" name="fullName" required />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email" required />
+          </div>
+
+          <div class="form-group">
+            <label for="company">Company/Organization (Optional)</label>
+            <input type="text" id="company" name="company" />
+          </div>
+
+          <div class="checkbox-group">
+            <input type="checkbox" id="agreeTerms" name="agreeTerms" required />
+            <label for="agreeTerms"
+              >I have read, understood, and agree to be bound by the terms of
+              this Non-Disclosure Agreement.</label
+            >
+          </div>
+
+          <div class="signature-section">
+            <h3>Digital Signature *</h3>
+            <p style="color: #718096; margin-bottom: 15px">
+              Please sign your name in the box below:
+            </p>
+            <canvas
+              id="signatureCanvas"
+              class="signature-canvas"
+              width="400"
+              height="150"
+            ></canvas>
+            <div class="signature-buttons">
+              <button type="button" class="btn btn-clear" id="clearSignature">
+                Clear Signature
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-sign" id="signButton" disabled>
+            🖋️ Sign NDA & Access Document
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Document Viewer Modal -->
+    <div class="document-viewer" id="documentViewer">
+      <div class="document-header">
+        <h2>📱 VibeMatch App Plan - Confidential Document</h2>
+        <button class="close-btn" id="closeDocument">✕ Close</button>
+      </div>
+      <div class="document-content">
+        <div class="document-page">
+          <h1>App Plan: VibeMatch (Working Title)</h1>
+
+          <h2>Overview</h2>
+          <p>
+            VibeMatch is an emotionally intelligent dating app built around a
+            5-round reveal game. Users gradually uncover age, occupation, voice,
+            appearance, and full identity through a gamified experience guided
+            by a Cupid AI. The app is designed to prioritize emotional
+            connection, reduce superficial swiping, and create a fun, respectful
+            dating journey.
+          </p>
+
+          <h2>Target Market</h2>
+          <ul>
+            <li>
+              Gen Z and Millennial users (18–35) who are tired of traditional
+              swipe apps
+            </li>
+            <li>
+              Gamers and online community members seeking deeper post-game
+              connections
+            </li>
+            <li>
+              Users seeking both romantic and platonic emotional compatibility
+            </li>
+          </ul>
+
+          <h2>Core Features</h2>
+          <p>
+            <strong>1. 1-on-1 Reveal Game:</strong> 5 rounds with 5 prompts
+            each. Minimum 3/5 matches to continue.
+          </p>
+          <p>
+            <strong>2. 1-on-3 / 1-on-5 Challenge Modes:</strong> Users pick one
+            final connection after multiple mini-reveals.
+          </p>
+          <p>
+            <strong>3. 1-on-3 / 1-on-5 Elimination Modes:</strong> Users can
+            eliminate candidates every round.
+          </p>
+
+          <h3>Game Modes</h3>
+          <p><strong>"Vibe & Explore" Mode:</strong></p>
+          <ul>
+            <li>Tone: Light, fun, flirty, personality-driven</li>
+            <li>
+              Prompt Style: Easy, casual, "what-if" scenarios, lifestyle
+              preferences
+            </li>
+            <li>Photo Reveal: Round 3</li>
+            <li>
+              Matching Mechanic: 3/5 match unlocks next round; 5/5 allows early
+              face reveal in Round 2
+            </li>
+            <li>
+              Ideal Users: People not sure yet what they want, just vibing,
+              casually dating
+            </li>
+          </ul>
+
+          <p><strong>"No Wasting Time" Mode:</strong></p>
+          <ul>
+            <li>Tone: Serious, introspective, value-driven</li>
+            <li>
+              Prompt Style: Deep questions — beliefs, future plans,
+              non-negotiables
+            </li>
+            <li>Photo Reveal: Round 4</li>
+            <li>
+              Matching Mechanic: 3/5 match unlocks next round; 5/5 allows
+              optional early face reveal in Round 3
+            </li>
+            <li>
+              Ideal Users: Serious daters, people who want fewer but
+              higher-quality matches
+            </li>
+          </ul>
+
+          <h3>Fixed Reveal Order</h3>
+          <ul>
+            <li>Round 1: Age</li>
+            <li>Round 2: Occupation</li>
+            <li>
+              Round 3: Face (unless 5/5 in Round 1 unlocks early face reveal)
+            </li>
+            <li>Round 4: Voice</li>
+            <li>Round 5: Full Identity</li>
+          </ul>
+
+          <h3>Additional Features</h3>
+          <ul>
+            <li>Users can choose between fast mode or slow mode</li>
+            <li>
+              Cupid AI: Moderates the game, provides question banks, prompts
+              conversation
+            </li>
+            <li>
+              If two consecutive rounds fail, the game ends — declaring a
+              mismatch
+            </li>
+            <li>User must win 3 out of 5 rounds to unlock chat access</li>
+            <li>
+              Exit Gracefully System: Built-in emotional safety with affirming
+              exits
+            </li>
+            <li>
+              Avatar-Based Anonymity: Users start as expressive characters that
+              reflect their vibe
+            </li>
+          </ul>
+
+          <h2>Monetization</h2>
+          <ul>
+            <li>
+              Avatar skins, accessories, and Cupid voices ("Cupid Closet")
+            </li>
+            <li>Replay tokens and second-chance rematches</li>
+            <li>
+              Premium matchmaking filters (e.g., cultural preferences,
+              personality focus)
+            </li>
+            <li>Licensing "Reveal Game SDK" to social games/apps</li>
+          </ul>
+
+          <h2>Go-to-Market Strategy</h2>
+          <ul>
+            <li>
+              Launch MVP in gaming communities (Valorant, Discord, Roblox)
+            </li>
+            <li>Partner with micro-influencers for TikTok demo content</li>
+            <li>
+              Launch post-game CTA integrations in small co-op or indie games
+            </li>
+            <li>
+              Build a public waitlist with tiered rewards for early adopters
+            </li>
+          </ul>
+
+          <h2>Relationship Status Badges</h2>
+          <table>
+            <tr>
+              <th>Badge</th>
+              <th>Meaning</th>
+            </tr>
+            <tr>
+              <td>Getting to Know</td>
+              <td>Talking to multiple people, still open to connections</td>
+            </tr>
+            <tr>
+              <td>Focused Chat</td>
+              <td>Talking mainly to one person, but not exclusive yet</td>
+            </tr>
+            <tr>
+              <td>Exclusive</td>
+              <td>
+                Chosen to focus only on one connection — exploring deeper
+                compatibility
+              </td>
+            </tr>
+            <tr>
+              <td>In a Relationship</td>
+              <td>Mutually confirmed relationship</td>
+            </tr>
+            <tr>
+              <td>Taking a Break</td>
+              <td>Temporarily not looking or pausing current connections</td>
+            </tr>
+            <tr>
+              <td>Low Profile (Optional)</td>
+              <td>
+                Not publicly showing their badge — for users who prefer privacy
+              </td>
+            </tr>
+          </table>
+
+          <h2>Why Include Gamers?</h2>
+          <p>
+            <strong>The Problem in Voice Chat Games:</strong> You connect with
+            someone during a match, but after the game ends, it rarely leads to
+            meaningful connection. You might add each other, but it stays
+            surface-level.
+          </p>
+
+          <p><strong>What this app solves:</strong></p>
+          <table>
+            <tr>
+              <th>Without This App</th>
+              <th>With This App</th>
+            </tr>
+            <tr>
+              <td>Connection with only a username</td>
+              <td>Full emotional discovery (age, voice, identity)</td>
+            </tr>
+            <tr>
+              <td>Ends after one match</td>
+              <td>Turns spark into a structured, fun journey</td>
+            </tr>
+            <tr>
+              <td>Ghosting or no follow-up</td>
+              <td>Guided flow + soft exits</td>
+            </tr>
+            <tr>
+              <td>Awkward 'add me?' moment</td>
+              <td>Easy post-game CTA: "Take this to Round 1?"</td>
+            </tr>
+          </table>
+
+          <h2>Sample Game Flow</h2>
+          <p>
+            The document includes a detailed 5-round sample game between "The
+            Dreamer" and "The Focus" showing how the matching system works
+            through age, occupation, face, voice, and final identity reveals,
+            with Cupid AI providing gentle guidance and exit messages at each
+            stage.
+          </p>
+
+          <p
+            style="
+              text-align: center;
+              margin-top: 40px;
+              color: #718096;
+              font-style: italic;
+            "
+          >
+            This document contains confidential and proprietary information
+            protected under the signed NDA.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Local JavaScript -->
+    <!-- jsPDF CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script src="script.js"></script>
+  </body>
+</html>
