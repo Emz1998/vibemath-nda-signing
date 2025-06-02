@@ -5,8 +5,9 @@ const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 // You'll need to replace these with your actual Google API credentials
 // Get them from: https://console.developers.google.com/
-const API_KEY = 'YOUR_GOOGLE_API_KEY_HERE';
-const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID_HERE';
+const API_KEY = 'AIzaSyB9LhVDezk7mmH0V1tR1YhVIwf-RxYrg2s';
+const CLIENT_ID =
+  '582559453454-e67dabpgjpkiiufqkitnj2duunsh9p9r.apps.googleusercontent.com';
 
 let gapi;
 let tokenClient;
