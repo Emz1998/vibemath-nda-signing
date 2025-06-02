@@ -195,11 +195,14 @@ function uploadToLocalServer(signingData) {
   formData.append('name', signingData.fullName);
   formData.append('email', signingData.email);
 
-  fetch('http://localhost:3000/upload', {
+  fetch('/upload', {
     method: 'POST',
     body: formData,
   })
-    .then((res) => res.json())
+    .then((res) => {
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      return res.json();
+    })
     .then((data) => {
       console.log('✅ Uploaded successfully');
     })
