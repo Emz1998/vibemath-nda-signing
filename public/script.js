@@ -127,64 +127,79 @@ function uploadToLocalServer(signingData) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
+  const pageWidth = doc.internal.pageSize.getWidth();
+  let y = 20;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text('NON-DISCLOSURE AGREEMENT', pageWidth / 2, y, { align: 'center' });
+
   doc.setFont('helvetica');
-  doc.setFontSize(20);
-  doc.text('NON-DISCLOSURE AGREEMENT', 105, 30, { align: 'center' });
-
-  doc.setFontSize(14);
-  doc.text('Signed Copy - VibeMatch App Plan Access', 105, 40, {
-    align: 'center',
-  });
-
   doc.setFontSize(12);
-  doc.text(`Signer: ${signingData.fullName}`, 20, 70);
-  doc.text(`Email: ${signingData.email}`, 20, 80);
-  if (signingData.company) {
-    doc.text(`Company: ${signingData.company}`, 20, 90);
-  }
-  doc.text(
-    `Signed: ${new Date(signingData.timestamp).toLocaleString()}`,
-    20,
-    100
-  );
+  y += 10;
 
-  if (signingData.signature) {
-    doc.text('Digital Signature:', 20, 120);
-    try {
-      doc.addImage(signingData.signature, 'PNG', 20, 125, 80, 30);
-    } catch {
-      doc.text('[Signature provided]', 20, 140);
-    }
-  }
+  const centerTextBlock = (label, lines) => {
+    doc.setFont(undefined, 'bold');
+    doc.text(label, pageWidth / 2, y, { align: 'center' });
+    y += 7;
+    doc.setFont(undefined, 'normal');
+    lines.forEach((line) => {
+      doc.text(line, pageWidth / 2, y, { align: 'center' });
+      y += 6;
+    });
+    y += 5;
+  };
 
-  doc.setFontSize(10);
-  const terms = [
-    '',
-    'This Non-Disclosure Agreement ("Agreement") is entered into by and between the disclosing party and the receiving party for the purpose of preventing the unauthorized disclosure of Confidential Information as defined below.',
-    '',
-    'Definition of Confidential Information: For purposes of this Agreement, "Confidential Information" shall include all information or material that has or could have commercial value or other utility in the business in which the disclosing party is engaged, including but not limited to:',
+  centerTextBlock(`This Non-Disclosure Agreement ("Agreement")`, [
+    'is entered into by and between the disclosing party and the receiving party',
+    'to prevent the unauthorized disclosure of Confidential Information as defined below.',
+  ]);
+
+  centerTextBlock('Definition of Confidential Information:', [
+    '"Confidential Information" includes:',
     '• Business plans, strategies, and concepts',
     '• Product designs, specifications, and development plans',
     '• Marketing strategies and customer information',
     '• Financial information and projections',
-    '',
-    'OBLIGATIONS:',
-    '• Hold information in strict confidence',
-    '• Not disclose to third parties',
-    '• Use only for evaluation purposes',
-    '',
-    'This agreement is valid for 5 years from signing date.',
-  ];
+    '• Technical data and know-how',
+  ]);
 
-  let yPos = 170;
-  terms.forEach((term) => {
-    if (yPos > 270) {
-      doc.addPage();
-      yPos = 30;
+  centerTextBlock('Obligations of Receiving Party:', [
+    'The receiving party agrees to:',
+    '• Hold and maintain the Confidential Information in strict confidence',
+    '• Not disclose it to any third parties',
+    '• Not use it for any purpose other than evaluation',
+    '• Return or destroy all Confidential Information upon request',
+  ]);
+
+  centerTextBlock('Term:', [
+    'This Agreement shall remain in effect for 5 years from the date of signing.',
+  ]);
+
+  centerTextBlock('Signer Details:', [
+    `Name: ${signingData.fullName}`,
+    `Email: ${signingData.email}`,
+    `Company: ${signingData.company || '(none)'}`,
+    `Signed on: ${new Date(signingData.timestamp).toLocaleString()}`,
+  ]);
+
+  if (signingData.signature) {
+    doc.text('Signature:', pageWidth / 2, y, { align: 'center' });
+    try {
+      doc.addImage(
+        signingData.signature,
+        'PNG',
+        (pageWidth - 80) / 2,
+        y + 5,
+        80,
+        30
+      );
+    } catch {
+      doc.text('[Signature could not be rendered]', pageWidth / 2, y + 15, {
+        align: 'center',
+      });
     }
-    doc.text(term, 20, yPos);
-    yPos += 10;
-  });
+  }
 
   const pdfBlob = doc.output('blob');
   const filename = `NDA_Signed_${signingData.fullName.replace(
@@ -201,16 +216,15 @@ function uploadToLocalServer(signingData) {
     method: 'POST',
     body: formData,
   })
-    .then((res) => {
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      return res.json();
-    })
+    .then((res) => res.json())
     .then((data) => {
       console.log('✅ Uploaded successfully');
     })
     .catch((err) => {
       console.error('❌ Upload failed:', err);
     });
+
+  window.lastPDF = { doc, filename };
 }
 
 window.scrollToDocument = scrollToDocument;
