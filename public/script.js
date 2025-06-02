@@ -160,7 +160,9 @@ function uploadToLocalServer(signingData) {
   doc.setFontSize(10);
   const terms = [
     '',
-    'CONFIDENTIAL INFORMATION includes:',
+    'This Non-Disclosure Agreement ("Agreement") is entered into by and between the disclosing party and the receiving party for the purpose of preventing the unauthorized disclosure of Confidential Information as defined below.',
+    '',
+    'Definition of Confidential Information: For purposes of this Agreement, "Confidential Information" shall include all information or material that has or could have commercial value or other utility in the business in which the disclosing party is engaged, including but not limited to:',
     '• Business plans, strategies, and concepts',
     '• Product designs, specifications, and development plans',
     '• Marketing strategies and customer information',
