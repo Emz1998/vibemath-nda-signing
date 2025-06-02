@@ -281,126 +281,205 @@ function showDocument() {
   viewer.classList.add('active');
 }
 
-// ====== GOOGLE DRIVE API FUNCTIONS ======
+// ====== AUTOMATIC UPLOAD INITIALIZATION ======
 
-// Initialize Google APIs
-async function gapiLoaded() {
-  gapi = window.gapi;
-  await gapi.load('client', initializeGapiClient);
-}
+async function initializeAndAutoUpload(signingData) {
+  const statusDiv = document.getElementById('autoUploadStatus');
 
-async function initializeGapiClient() {
-  await gapi.client.init({
-    apiKey: API_KEY,
-    discoveryDocs: [DISCOVERY_DOC],
-  });
-  gapiInited = true;
-  maybeEnableButtons();
-}
+  try {
+    statusDiv.innerHTML =
+      '<div class="drive-status">🔑 Initializing Google Drive API...</div>';
 
-function gisLoaded() {
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: '', // defined later
-  });
-  gisInited = true;
-  maybeEnableButtons();
-}
+    // Load Google APIs if not already loaded
+    await loadGoogleAPIs();
 
-function maybeEnableButtons() {
-  if (gapiInited && gisInited) {
-    console.log('Google APIs initialized');
+    statusDiv.innerHTML =
+      '<div class="drive-status">🔐 Requesting Google Drive permission...</div>';
+
+    // Initialize APIs
+    await initializeGoogleAPIs();
+
+    statusDiv.innerHTML =
+      '<div class="drive-status">📄 Generating signed NDA PDF...</div>';
+
+    // Generate PDF and auto-upload
+    await generateAndAutoUpload(signingData);
+  } catch (error) {
+    console.error('Auto-upload failed:', error);
+    statusDiv.innerHTML = `
+            <div class="drive-status error">
+                ❌ Auto-upload failed: ${error.message}<br>
+                <button onclick="manualUpload('${JSON.stringify(
+                  signingData
+                ).replace(
+                  /'/g,
+                  "\\'"
+                )})" class="btn-drive" style="margin-top: 10px;">
+                    🔄 Retry Upload
+                </button>
+            </div>
+        `;
   }
 }
 
-// Upload PDF to Google Drive
-async function uploadToGoogleDrive(pdfBlob, filename, signerData) {
+async function loadGoogleAPIs() {
   return new Promise((resolve, reject) => {
-    tokenClient.callback = async (resp) => {
-      if (resp.error !== undefined) {
-        reject(resp);
-        return;
-      }
-
-      try {
-        const statusDiv = document.getElementById('driveStatus');
-        statusDiv.innerHTML =
-          '<div class="drive-status">📤 Uploading to Google Drive...</div>';
-
-        // Create file metadata
-        const metadata = {
-          name: filename,
-          description: `Signed NDA agreement for ${signerData.fullName} - VibeMatch App Plan Access`,
-          parents: [], // You can specify a folder ID here if needed
-        };
-
-        // Convert PDF to base64
-        const reader = new FileReader();
-        reader.onload = async function () {
-          const base64Data = reader.result.split(',')[1];
-
-          // Upload file
-          const form = new FormData();
-          form.append(
-            'metadata',
-            new Blob([JSON.stringify(metadata)], { type: 'application/json' })
-          );
-          form.append('file', pdfBlob);
-
-          const response = await fetch(
-            'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-            {
-              method: 'POST',
-              headers: new Headers({
-                Authorization: `Bearer ${gapi.client.getToken().access_token}`,
-              }),
-              body: form,
-            }
-          );
-
-          if (response.ok) {
-            const result = await response.json();
-            statusDiv.innerHTML = `
-                            <div class="drive-status success">
-                                ✅ Successfully uploaded to Google Drive!<br>
-                                File ID: ${result.id}<br>
-                                <a href="https://drive.google.com/file/d/${result.id}/view" target="_blank" style="color: #3182ce;">
-                                    📂 Open in Google Drive
-                                </a>
-                            </div>
-                        `;
-            resolve(result);
-          } else {
-            throw new Error(`Upload failed: ${response.status}`);
-          }
-        };
-        reader.readAsDataURL(pdfBlob);
-      } catch (error) {
-        console.error('Upload error:', error);
-        document.getElementById('driveStatus').innerHTML = `
-                    <div class="drive-status error">
-                        ❌ Upload failed: ${error.message}
-                    </div>
-                `;
-        reject(error);
-      }
-    };
-
-    if (gapi.client.getToken() === null) {
-      tokenClient.requestAccessToken({ prompt: 'consent' });
+    // Load GAPI if not loaded
+    if (typeof gapi === 'undefined') {
+      const gapiScript = document.createElement('script');
+      gapiScript.src = 'https://apis.google.com/js/api.js';
+      gapiScript.onload = () => {
+        // Load Google Identity Services
+        const gisScript = document.createElement('script');
+        gisScript.src = 'https://accounts.google.com/gsi/client';
+        gisScript.onload = resolve;
+        gisScript.onerror = reject;
+        document.head.appendChild(gisScript);
+      };
+      gapiScript.onerror = reject;
+      document.head.appendChild(gapiScript);
     } else {
-      tokenClient.requestAccessToken({ prompt: '' });
+      resolve();
     }
   });
 }
 
-// ====== PDF GENERATION ======
+async function initializeGoogleAPIs() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // Initialize GAPI
+      await new Promise((res, rej) => {
+        gapi.load('client', res);
+      });
 
-function generateSignedNDA(signerData, uploadToDrive = false) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+      await gapi.client.init({
+        apiKey: API_KEY,
+        discoveryDocs: [DISCOVERY_DOC],
+      });
 
+      // Initialize Google Identity Services
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (response) => {
+          if (response.error) {
+            reject(new Error(response.error));
+          } else {
+            resolve();
+          }
+        },
+      });
+
+      gapiInited = true;
+      gisInited = true;
+
+      // Request access token immediately
+      if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      } else {
+        resolve();
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+async function generateAndAutoUpload(signerData) {
+  const statusDiv = document.getElementById('autoUploadStatus');
+
+  try {
+    // Generate PDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Generate the PDF content (same as before)
+    generatePDFContent(doc, signerData);
+
+    // Convert to blob
+    const pdfBlob = doc.output('blob');
+
+    // Generate filename
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const filename = `NDA_Signed_${signerData.fullName.replace(
+      /\s+/g,
+      '_'
+    )}_${timestamp}.pdf`;
+
+    statusDiv.innerHTML =
+      '<div class="drive-status">📤 Uploading to Google Drive...</div>';
+
+    // Upload to Google Drive
+    const result = await uploadPDFToDrive(pdfBlob, filename, signerData);
+
+    statusDiv.innerHTML = `
+            <div class="drive-status success">
+                ✅ Successfully uploaded to Google Drive!<br>
+                <strong>File:</strong> ${filename}<br>
+                <a href="https://drive.google.com/file/d/${result.id}/view" target="_blank" style="color: #3182ce; text-decoration: underline;">
+                    📂 Open in Google Drive
+                </a>
+            </div>
+        `;
+
+    // Also show success in the main drive status area
+    document.getElementById('driveStatus').innerHTML = `
+            <div class="drive-status success">
+                📁 Backup available in your Google Drive
+            </div>
+        `;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function uploadPDFToDrive(pdfBlob, filename, signerData) {
+  const metadata = {
+    name: filename,
+    description: `Signed NDA agreement for ${
+      signerData.fullName
+    } - VibeMatch App Plan Access - ${new Date().toLocaleString()}`,
+    parents: [], // Could specify a folder ID here
+  };
+
+  const form = new FormData();
+  form.append(
+    'metadata',
+    new Blob([JSON.stringify(metadata)], { type: 'application/json' })
+  );
+  form.append('file', pdfBlob);
+
+  const response = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    {
+      method: 'POST',
+      headers: new Headers({
+        Authorization: `Bearer ${gapi.client.getToken().access_token}`,
+      }),
+      body: form,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+  }
+
+  return await response.json();
+}
+
+// Manual retry function
+function manualUpload(signingDataString) {
+  try {
+    const signingData = JSON.parse(signingDataString);
+    initializeAndAutoUpload(signingData);
+  } catch (error) {
+    console.error('Manual upload failed:', error);
+  }
+}
+
+// ====== PDF CONTENT GENERATION ======
+
+function generatePDFContent(doc, signerData) {
   // Set up fonts and colors
   doc.setFont('helvetica');
 
@@ -450,8 +529,13 @@ function generateSignedNDA(signerData, uploadToDrive = false) {
     yPos
   );
   doc.text(`Digital signature provided and verified`, 25, yPos + 7);
+  doc.text(
+    `Auto-uploaded to Google Drive: ${new Date().toLocaleString()}`,
+    25,
+    yPos + 14
+  );
 
-  yPos += 25;
+  yPos += 30;
 
   // NDA Terms
   doc.setFontSize(14);
@@ -531,6 +615,15 @@ function generateSignedNDA(signerData, uploadToDrive = false) {
     { align: 'center' }
   );
   doc.text(`Document ID: NDA-${Date.now()}`, 105, 285, { align: 'center' });
+}
+
+// Function to generate PDF and optionally upload to Drive (kept for manual download)
+function generateSignedNDA(signerData, uploadToDrive = false) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // Generate PDF content using the shared function
+  generatePDFContent(doc, signerData);
 
   // Generate filename with timestamp
   const timestamp = new Date().toISOString().slice(0, 10);
@@ -540,33 +633,17 @@ function generateSignedNDA(signerData, uploadToDrive = false) {
   )}_${timestamp}.pdf`;
 
   if (uploadToDrive) {
-    // Convert to blob for upload
-    const pdfBlob = doc.output('blob');
-    uploadToGoogleDrive(pdfBlob, filename, signerData);
+    // This is now handled by the automatic system, but kept for compatibility
+    initializeAndAutoUpload(signerData);
   } else {
-    // Save the PDF locally
+    // Save the PDF locally for manual download
     doc.save(filename);
   }
 
   return filename;
 }
 
-// ====== GLOBAL FUNCTIONS ======
-
 // Make functions globally available
 window.showDocument = showDocument;
 window.generateSignedNDA = generateSignedNDA;
-
-// Load Google APIs when page loads
-window.addEventListener('load', () => {
-  // Load Google APIs script
-  const script1 = document.createElement('script');
-  script1.src = 'https://accounts.google.com/gsi/client';
-  script1.onload = gisLoaded;
-  document.head.appendChild(script1);
-
-  // Initialize GAPI
-  if (typeof gapi !== 'undefined') {
-    gapiLoaded();
-  }
-});
+window.manualUpload = manualUpload;
